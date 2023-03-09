@@ -1,0 +1,74 @@
+syntax = "proto3";
+
+package proto; 
+
+import "google/protobuf/timestamp.proto";
+import "gogoproto/gogo.proto";
+
+service RamServices {
+    rpc GetListRamEvents(GetListRamEventsRequest) returns (GetListRamEventsResponse);
+    rpc GetListRamEventActions(GetListRamEventActionsRequest) returns (GetListRamEventActionsResponse); 
+    rpc GetRamEventDetail(GetRamEventDetailRequest) returns (GetRamEventDetailResponse);
+    rpc GetRamEventActionDetail(GetRamEventActionDetailRequest) returns (GetRamEventActionDetailResponse);
+    rpc UpdateRamEvent(UpdateRamEventRequest) returns (UpdateRamEventResponse);
+    rpc CreateConnection(CreateConnectionRequest) returns (CreateConnectionResponse);
+    rpc GetListConnection(GetListConnectionRequest) returns (GetListConnectionResponse);
+    rpc GetConnection(GetConnectionRequest) returns (GetConnectionResponse);
+    rpc GetEventStatistics(GetEventStatisticsRequest) returns (GetEventStatisticsResponse);
+} 
+
+enum DatabaseType {
+    MY_SQL = 0;
+    POSTGRESQL = 1;
+}
+
+message Connection {
+    uint32 id = 1;
+    DatabaseType type = 2;
+    int port = 3;
+    string username = 4;
+    string name = 5;
+    repeated string allowedEmails = 6;
+}
+
+message RAMEvent {
+    uint32 id = 1;
+    string ref = 2;
+    string data = 3;
+    EventStatus status = 4;
+    google.protobuf.Timestamp created_at = 5;
+    google.protobuf.Timestamp updated_at = 6;
+    int retry = 6;
+}
+
+message PagingMetadata {
+    uint32 current_page = 1;
+    uint32 page_size = 2;
+    uint32 total_items = 3;
+    uint32 total_pages = 4;
+}
+
+message GetListRamEventsRequest {
+   Connection cn = 1;
+   string ref = 2;
+   uint32 id = 3;
+   enum SortBy {
+       CREATED_AT = 0;
+       UPDATED_AT = 1;
+       RETRY = 2;
+   }
+}
+
+message GetListRamEventsResponse {
+    uint32 code = 1;
+    string message = 2;
+    repeated RAMEvent events = 3 [(gogoproto.moretags) = "response_field:\"data\""];
+    PagingMetadata meta = 4;
+}
+
+message GetEventStatisticsRequest {
+   EventStatus status = 1;
+   EventType event_type = 2;
+   google.protobuf.Timestamp start_date = 3;
+   google.protobuf.Timestamp end_date = 4;
+}

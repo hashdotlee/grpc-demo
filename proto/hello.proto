@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package proto; 
+
+import "gogoproto/gogo.proto";
+import "proto/dto.proto";
+import "validate/validate.proto";
+
+service HelloService { 
+    rpc sayHello(HelloRequest) returns (HelloResponse);
+}
+
+message HelloRequest {
+    string name = 1;
+}
+
+message HelloResponse {
+    string greet = 1;
+}
+
+
+
