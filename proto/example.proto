@@ -1,11 +1,17 @@
 syntax = "proto3";
-
-package proto; 
+//-------------------------------------------------// 
 
 import "google/protobuf/timestamp.proto";
 import "gogoproto/gogo.proto";
+import "validate/validate.proto";
 
-service RamServices {
+/**
+/--------------------------------------------------
+/ RAM UI Service
+/--------------------------------------------------
+/*/
+
+service RamUIServices {
     rpc GetListRamEvents(GetListRamEventsRequest) returns (GetListRamEventsResponse);
     rpc GetListRamEventActions(GetListRamEventActionsRequest) returns (GetListRamEventActionsResponse); 
     rpc GetRamEventDetail(GetRamEventDetailRequest) returns (GetRamEventDetailResponse);
@@ -15,30 +21,42 @@ service RamServices {
     rpc GetListConnection(GetListConnectionRequest) returns (GetListConnectionResponse);
     rpc GetConnection(GetConnectionRequest) returns (GetConnectionResponse);
     rpc GetEventStatistics(GetEventStatisticsRequest) returns (GetEventStatisticsResponse);
+    rpc UpdateConnection(UpdateConnectionRequest) returns (UpdateConnectionResponse);
+    rpc CheckConnection(CheckConnectionRequest) returns (CheckConnectionResponse);
 } 
-
-enum DatabaseType {
-    MY_SQL = 0;
-    POSTGRESQL = 1;
-}
 
 message Connection {
     uint32 id = 1;
     DatabaseType type = 2;
-    int port = 3;
-    string username = 4;
-    string name = 5;
-    repeated string allowedEmails = 6;
+    string host = 3;
+    int port = 4;
+    string username = 5;
+    string encrypted_password = 6;
+    string name = 7;
+    repeated string table_names = 8;
+    repeated string owner_emails = 9;
 }
 
 message RAMEvent {
     uint32 id = 1;
     string ref = 2;
     string data = 3;
-    EventStatus status = 4;
-    google.protobuf.Timestamp created_at = 5;
-    google.protobuf.Timestamp updated_at = 6;
-    int retry = 6;
+    string key = 4;
+    EventType type = 5;
+    EventStatus status = 6;
+    int retry = 7;
+    google.protobuf.Timestamp created_at = 8;
+    google.protobuf.Timestamp updated_at = 9;
+}
+
+message RAMEventAction {
+    uint32 id = 1;
+    uint32 event_id = 2;
+    uint32 retry_id = 3;
+    EventActionStatus status = 4;
+    string error = 5;
+    google.protobuf.Timestamp created_at = 6;
+    google.protobuf.Timestamp updated_at = 7;
 }
 
 message PagingMetadata {
@@ -49,14 +67,14 @@ message PagingMetadata {
 }
 
 message GetListRamEventsRequest {
-   Connection cn = 1;
-   string ref = 2;
-   uint32 id = 3;
-   enum SortBy {
-       CREATED_AT = 0;
-       UPDATED_AT = 1;
-       RETRY = 2;
-   }
+    uint32 connection_id = 1;
+    string keyword = 2;
+    enum SortBy {
+        CREATED_AT = 0;
+        UPDATED_AT = 1;
+        RETRY = 2;
+    }
+    SortBy sort_by = 3;
 }
 
 message GetListRamEventsResponse {
@@ -66,9 +84,157 @@ message GetListRamEventsResponse {
     PagingMetadata meta = 4;
 }
 
+message GetRamEventDetailRequest {
+    uint32 connection_id = 1;
+    uint32 id = 2;
+}
+
+message GetRamEventDetailResponse {
+    int32 code = 1;
+    string message = 2;
+    RAMEvent event = 3 [(gogoproto.moretags) = "response_field:\"data\""];
+}
+
+message UpdateRamEventRequest {
+    uint32 connection_id = 1;
+    int32 id = 2;
+    EventStatus status = 3;
+    int retry = 4; 
+}
+
+message UpdateRamEventResponse {
+    uint32 code = 1;
+    string message = 2;
+    message Data {
+        RAMEvent event = 1;
+    }
+    Data data = 3;
+}
+
+message GetListRamEventActionsRequest {
+    uint32 connection_id = 1;
+    string event_id = 2;
+    uint32 id = 3;
+    EventStatus status = 4;
+    string error = 5;
+    enum SortBy {
+        CREATED_AT = 0;
+        UPDATED_AT = 1;
+        RETRY_ID = 2;
+    }
+    SortBy sort_by = 6;
+}
+
+message GetListRamEventActionsResponse {
+    int32 code = 1;
+    string message = 2;
+    repeated RAMEventAction actions = 3 [(gogoproto.moretags) = "response_field:\"data\""];
+    PagingMetadata meta = 4;
+
+}
+
+message GetRamEventActionDetailRequest {
+   uint32 connection_id = 1;
+   uint32 id = 2;
+}
+
+message GetRamEventActionDetailResponse {
+    int32 code = 1;
+    string message = 2;
+    message Data {
+        RAMEventAction event = 1;
+    }
+    Data data = 3;
+}
+
+message CreateConnectionRequest {
+    string name = 1;
+    DatabaseType type = 2;
+    string host = 3;
+    int port = 4;
+    string username = 5;
+    string password = 6;
+    string name = 7;
+    string db_name = 8;
+    repeated string table_names = 9;
+    repeated string owner_emails = 10;
+}
+
+message CreateConnectionResponse {
+   uint32 code = 1;
+   string message = 2;
+   uint32 id = 3;
+}
+
+message GetListConnectionRequest {
+    string keyword = 1;
+}
+
+message GetListConnectionResponse {
+    int32 code = 1;
+    string message = 2;
+    repeated Connection connections = 3 [(gogoproto.moretags) = "response_field:\"data\""]; 
+}
+
+message GetConnectionRequest {
+    uint32 id = 1;
+}
+
+message GetConnectionResponse {
+    uint32 code = 1;
+    string message = 2;
+    message Data {
+        Connection connection = 1;
+    }
+    Data data = 3;
+}
+
+message UpdateConnectionRequest {
+    uint32 id = 1;
+    string name = 2;
+    repeated string owner_emails = 3;
+}
+
+message UpdateConnectionResponse {
+    uint32 code = 1;
+    string message = 2;
+}
+
 message GetEventStatisticsRequest {
-   EventStatus status = 1;
-   EventType event_type = 2;
-   google.protobuf.Timestamp start_date = 3;
-   google.protobuf.Timestamp end_date = 4;
+    EventStatus status = 1;
+    EventType event_type = 2;
+    google.protobuf.Timestamp start_date = 3;
+    google.protobuf.Timestamp end_date = 4;
+}
+
+message GetEventStatisticsResponse {
+    uint32 code = 1;
+    string message = 2;
+    uint32 num_of_error = 3;    
+    uint32 num_of_pending = 4;    
+    uint32 num_of_done = 5;    
+    message EventStatisticData {
+       google.protobuf.Timestamp datetime = 1;
+       uint32 error_count = 2;
+       uint32 pending_count = 3;
+       uint32 done_count = 4;
+    }    
+    repeated EventStatisticData data = 6;
+    google.protobuf.Timestamp start_date = 7;
+    google.protobuf.Timestamp end_date = 8;
+}
+
+message CheckConnectionRequest {
+    DatabaseType type = 1;
+    string host = 2;
+    int port = 3;
+    string username = 4;
+    string password = 5;
+    string db_name = 6;
+    string table_names = 7;
+}
+
+message CheckConnectionResponse {
+    uint32 code = 1;
+    string message = 2;
 }

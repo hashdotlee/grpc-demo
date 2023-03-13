@@ -419,3 +419,27 @@ enum EventStatus {
     DONE = 2;
     NOT_DONE = 3;
 }
+
+enum EventActionStatus {
+    ALL = 0;
+    SUCCEEDED = 0;
+    FAILED = 1;
+}
+
+enum EventStatus {
+    ALL = 0;
+    SENT = 1; 
+    DONE = 2;
+    NOT_DONE = 3;
+}
+
+enum EventActionStatus {
+    ALL = 0;
+    SUCCEEDED = 1;
+    FAILED = 2;
+}
+
+enum DatabaseType {
+    MY_SQL = 0;
+    POSTGRESQL = 1;
+}
